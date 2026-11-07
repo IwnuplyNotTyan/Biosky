@@ -28,7 +28,7 @@ func main() {
 
 	if *dryRun {
 		slot := bio.Slot(time.Now())
-		fmt.Printf("theme: %s\nslot: %d\nbio: %s\n", bio.Theme(), slot, bio.Generate(slot))
+		fmt.Printf("slot: %d\nbio: %s\n", slot, bio.Generate(slot))
 		return
 	}
 

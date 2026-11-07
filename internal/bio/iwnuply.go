@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-const theme = "iwnuply"
-
 const synodicMonthDays = 29.530588853
 
 var referenceNewMoon = time.Date(2000, 1, 6, 18, 14, 0, 0, time.UTC)

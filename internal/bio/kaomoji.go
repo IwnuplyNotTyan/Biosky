@@ -8,8 +8,6 @@ import (
 	"math/rand/v2"
 )
 
-const theme = ThemeKaomoji
-
 // kaomoji.json is a flat list derived from
 // https://github.com/asakura89/Minimanimoji, which is released under the
 // Unlicense (public domain).
