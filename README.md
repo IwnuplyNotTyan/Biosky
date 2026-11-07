@@ -14,9 +14,9 @@ safe: if the description already matches, no write happens.
   reads the existing `app.bsky.actor.profile` record, replaces only
   `description`, and writes it back with `swapRecord`. Display name, avatar,
   banner, and unknown fields are preserved.
-- `internal/bio` contains everything that decides the text: the UTC day slot,
-  the deterministic random source, the moon-phase calculation, and the bio
-  functions. They all live in `bio.go`.
+- `internal/bio` has the shared core in `bio.go` (`Slot`, `Rand`, `Theme`) and
+  one file per template: `default.go`, `kaomoji.go`, and `moon.go`. Each
+  template file contains all of its functions and is selected with a build tag.
 - `internal/bio/kaomoji.json` is the embedded kaomoji list. It is derived from
   [Minimanimoji](https://github.com/asakura89/Minimanimoji), released under the
   Unlicense (public domain).
@@ -35,6 +35,14 @@ direnv allow            # or: nix develop
 go build -trimpath -ldflags "-s -w" -o biosky ./cmd/biosky
 ```
 
+The default build has no tag and uses the `default` template. Pick a template
+with exactly one build tag:
+
+```bash
+go build -tags bio_kaomoji -o biosky ./cmd/biosky
+go build -tags bio_moon    -o biosky ./cmd/biosky
+```
+
 Preview the result without touching the network:
 
 ```bash
@@ -44,18 +52,12 @@ Preview the result without touching the network:
 
 ## Choosing the bio
 
-The compiled bio is selected by one constant at the top of
-`internal/bio/bio.go`:
+- No tag: `default` — a fixed phrase.
+- `bio_kaomoji`: one entry from `kaomoji.json` per UTC day.
+- `bio_moon`: the moon phase and a matching line per UTC day.
 
-```go
-const theme = ThemeKaomoji
-```
-
-The available values are `ThemeKaomoji` (default), `ThemeMoon`, and
-`ThemeDefault`. Edit the line and rebuild; no build tags are involved.
-
-`kaomoji` picks one entry from `kaomoji.json` for the current UTC day. `moon`
-prints the moon phase and a matching line. `default` prints a fixed phrase.
+Only one `bio_*` tag may be used. Compiling two template files makes the
+duplicate `Generate` definition fail the build.
 
 ## Configuration
 
@@ -106,10 +108,15 @@ in a crontab.
 
 ## Changing the bio
 
-All generation code is in `internal/bio/bio.go`. Edit `kaomojiBio`, `moonBio`,
-or `defaultBio`, then move the `theme` constant to the one you want. A bio
-function receives the UTC day slot and may use `bio.Rand(slot, salt)` or
-`bio.MoonPhaseAtSlot(slot)`.
+Each template owns one file in `internal/bio`:
+
+- `default.go` (`//go:build !bio_kaomoji && !bio_moon`)
+- `kaomoji.go` (`//go:build bio_kaomoji`)
+- `moon.go` (`//go:build bio_moon`)
+
+Edit the file for the template you build. Every template file defines its own
+`theme` constant and `Generate` function, so all of its code stays in one
+place. A template receives the UTC day slot and may use `Rand(slot, salt)`.
 
 To refresh the kaomoji list, replace `internal/bio/kaomoji.json` with a JSON
 array of strings. Keep generated bios non-empty and at most 256 characters; the
@@ -119,6 +126,8 @@ app rejects anything else before it contacts Bluesky.
 
 ```bash
 go test ./...
+go test -tags bio_kaomoji ./...
+go test -tags bio_moon ./...
 go vet ./...
 ```
 
