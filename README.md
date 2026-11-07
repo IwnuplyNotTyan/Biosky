@@ -14,10 +14,12 @@ safe: if the description already matches, no write happens.
   reads the existing `app.bsky.actor.profile` record, replaces only
   `description`, and writes it back with `swapRecord`. Display name, avatar,
   banner, and unknown fields are preserved.
-- `internal/bio` owns the `Generator` interface, the UTC day slot, the
-  deterministic random source, and the moon-phase calculation.
-- `internal/themes` contains the content. A theme is a build-tagged file that
-  registers a generator at startup.
+- `internal/bio` contains everything that decides the text: the UTC day slot,
+  the deterministic random source, the moon-phase calculation, and the bio
+  functions. They all live in `bio.go`.
+- `internal/bio/kaomoji.json` is the embedded kaomoji list. It is derived from
+  [Minimanimoji](https://github.com/asakura89/Minimanimoji), released under the
+  Unlicense (public domain).
 
 The binary uses only the Go standard library.
 
@@ -33,23 +35,27 @@ direnv allow            # or: nix develop
 go build -trimpath -ldflags "-s -w" -o biosky ./cmd/biosky
 ```
 
-The default build uses the `default` theme. Pick a theme with a build tag:
-
-```bash
-go build -tags bio_kaomoji -o biosky ./cmd/biosky
-go build -tags bio_moon    -o biosky ./cmd/biosky
-go build -tags bio_mixed   -o biosky ./cmd/biosky
-```
-
-Exactly one `bio_*` tag may be used. Two tags in one build make the program fail
-at startup with an error naming both themes.
-
 Preview the result without touching the network:
 
 ```bash
 ./biosky -dry-run
 ./biosky -version
 ```
+
+## Choosing the bio
+
+The compiled bio is selected by one constant at the top of
+`internal/bio/bio.go`:
+
+```go
+const theme = ThemeKaomoji
+```
+
+The available values are `ThemeKaomoji` (default), `ThemeMoon`, and
+`ThemeDefault`. Edit the line and rebuild; no build tags are involved.
+
+`kaomoji` picks one entry from `kaomoji.json` for the current UTC day. `moon`
+prints the moon phase and a matching line. `default` prints a fixed phrase.
 
 ## Configuration
 
@@ -98,46 +104,22 @@ runs exit without writing.
 Prefer the environment file with a wrapper script over putting secrets directly
 in a crontab.
 
-## Adding a theme
+## Changing the bio
 
-Create one file in `internal/themes`, for example `internal/themes/quiet.go`:
-
-```go
-//go:build bio_quiet
-
-package themes
-
-import "biosky/internal/bio"
-
-type quiet struct{}
-
-func (quiet) Generate(slot int64) string {
-	return "quietly here"
-}
-
-func init() {
-	bio.Register("quiet", quiet{})
-}
-```
-
-Build with `-tags bio_quiet`. No registry edits are needed. A generator receives
-the UTC day slot and may use `bio.Rand(slot, salt)` or
+All generation code is in `internal/bio/bio.go`. Edit `kaomojiBio`, `moonBio`,
+or `defaultBio`, then move the `theme` constant to the one you want. A bio
+function receives the UTC day slot and may use `bio.Rand(slot, salt)` or
 `bio.MoonPhaseAtSlot(slot)`.
 
-Keep generated bios non-empty and at most 256 characters; the app rejects
-anything else before it contacts Bluesky.
+To refresh the kaomoji list, replace `internal/bio/kaomoji.json` with a JSON
+array of strings. Keep generated bios non-empty and at most 256 characters; the
+app rejects anything else before it contacts Bluesky.
 
 ## Tests
 
-Run every tag combination:
-
 ```bash
 go test ./...
-go test -tags bio_kaomoji ./...
-go test -tags bio_moon ./...
-go test -tags bio_mixed ./...
 go vet ./...
-golangci-lint run
 ```
 
 ## Nix
