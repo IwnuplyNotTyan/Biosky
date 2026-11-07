@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/biosky
+ExecStart=%h/.local/bin/biosky
 EnvironmentFile=%h/.config/biosky/env
 NoNewPrivileges=true
 PrivateTmp=true

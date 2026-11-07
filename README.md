@@ -92,7 +92,7 @@ runs exit without writing.
 ### cron
 
 ```cron
-17 * * * * BIOSKY_HANDLE=user.bsky.social BIOSKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx /usr/local/bin/biosky
+17 * * * * BIOSKY_HANDLE=user.bsky.social BIOSKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx $HOME/.local/bin/biosky
 ```
 
 Prefer the environment file with a wrapper script over putting secrets directly
