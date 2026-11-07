@@ -10,6 +10,7 @@ const (
 	ThemeDefault = "default"
 	ThemeKaomoji = "kaomoji"
 	ThemeMoon    = "moon"
+	ThemeIwnuply = "iwnuply"
 )
 
 // Theme returns the name of the compiled-in bio.

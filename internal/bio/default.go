@@ -1,4 +1,4 @@
-//go:build !kaomoji && !moon
+//go:build !kaomoji && !moon && !iwnuply
 
 package bio
 
