@@ -17,7 +17,7 @@ type fakeGenerator struct {
 	slot int64
 }
 
-func (g *fakeGenerator) Generate(slot int64) string {
+func (g *fakeGenerator) generate(slot int64) string {
 	g.slot = slot
 	return g.text
 }
@@ -44,7 +44,7 @@ func (u *fakeUpdater) UpdateDescription(_ context.Context, description string) (
 
 func newApp(gen *fakeGenerator, updater *fakeUpdater, now time.Time) *App {
 	return New(
-		bio.Selection{Name: "test", Generator: gen},
+		gen.generate,
 		updater,
 		func() time.Time { return now },
 		log.New(io.Discard, "", 0),
@@ -107,6 +107,18 @@ func TestRunRejectsEmptyBioBeforeLogin(t *testing.T) {
 	}
 	if updater.loginCalls != 0 {
 		t.Fatal("login was attempted with an invalid bio")
+	}
+}
+
+func TestRunRejectsNilGenerator(t *testing.T) {
+	now := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
+	updater := &fakeUpdater{}
+	err := New(nil, updater, func() time.Time { return now }, log.New(io.Discard, "", 0)).Run(context.Background())
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	if updater.loginCalls != 0 {
+		t.Fatal("login was attempted with a nil generator")
 	}
 }
 

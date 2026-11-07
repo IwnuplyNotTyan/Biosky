@@ -15,6 +15,9 @@ import (
 // MaxDescriptionLength is the Bluesky limit for a profile description.
 const MaxDescriptionLength = 256
 
+// Generator produces a bio for a UTC day slot.
+type Generator func(slot int64) string
+
 // Updater is the slice of the Bluesky client the app needs.
 type Updater interface {
 	Login(ctx context.Context) error
@@ -23,30 +26,33 @@ type Updater interface {
 
 // App runs one bio update.
 type App struct {
-	selection bio.Selection
-	updater   Updater
-	now       func() time.Time
-	logger    *log.Logger
+	generate Generator
+	updater  Updater
+	now      func() time.Time
+	logger   *log.Logger
 }
 
 // New builds an App; a nil logger falls back to log.Default().
-func New(selection bio.Selection, updater Updater, now func() time.Time, logger *log.Logger) *App {
+func New(generate Generator, updater Updater, now func() time.Time, logger *log.Logger) *App {
 	if now == nil {
 		now = time.Now
 	}
 	if logger == nil {
 		logger = log.Default()
 	}
-	return &App{selection: selection, updater: updater, now: now, logger: logger}
+	return &App{generate: generate, updater: updater, now: now, logger: logger}
 }
 
 // Run generates the bio for the current slot and writes it if needed.
 func (a *App) Run(ctx context.Context) error {
+	if a.generate == nil {
+		return errors.New("generator is nil")
+	}
 	if a.updater == nil {
 		return errors.New("updater is nil")
 	}
 	slot := bio.Slot(a.now())
-	text := a.selection.Generator.Generate(slot)
+	text := a.generate(slot)
 	if err := ValidateDescription(text); err != nil {
 		return err
 	}
@@ -58,9 +64,9 @@ func (a *App) Run(ctx context.Context) error {
 		return fmt.Errorf("update description: %w", err)
 	}
 	if changed {
-		a.logger.Printf("theme=%s slot=%d updated: %s", a.selection.Name, slot, text)
+		a.logger.Printf("slot=%d updated: %s", slot, text)
 	} else {
-		a.logger.Printf("theme=%s slot=%d unchanged", a.selection.Name, slot)
+		a.logger.Printf("slot=%d unchanged", slot)
 	}
 	return nil
 }

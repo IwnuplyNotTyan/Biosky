@@ -6,12 +6,6 @@ import (
 	"time"
 )
 
-type fixedGen struct{ text string }
-
-func (f fixedGen) Generate(int64) string { return f.text }
-
-func resetRegistry() { themes = map[string]Generator{} }
-
 func TestSlot(t *testing.T) {
 	ts := time.Date(2026, 11, 7, 23, 59, 59, 0, time.UTC)
 	got := Slot(ts)
@@ -31,48 +25,97 @@ func TestRandIsDeterministicPerSlot(t *testing.T) {
 	}
 }
 
-func TestSelectDefault(t *testing.T) {
-	resetRegistry()
-	Register(DefaultTheme, fixedGen{"default"})
-	sel, err := Select()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if sel.Name != DefaultTheme || sel.Generator.Generate(0) != "default" {
-		t.Fatalf("unexpected selection: %+v", sel)
+var testReferenceNewMoon = time.Date(2000, 1, 6, 18, 14, 0, 0, time.UTC)
+
+func TestMoonPhaseAtReference(t *testing.T) {
+	if got := MoonPhaseAt(testReferenceNewMoon); got.Index != 0 || got.Name != "new moon" {
+		t.Fatalf("at reference new moon got %+v", got)
 	}
 }
 
-func TestSelectSingleTheme(t *testing.T) {
-	resetRegistry()
-	Register(DefaultTheme, fixedGen{"default"})
-	Register("kaomoji", fixedGen{"kaomoji"})
-	sel, err := Select()
-	if err != nil {
-		t.Fatal(err)
+func TestMoonPhaseQuarters(t *testing.T) {
+	cases := []struct {
+		offset time.Duration
+		index  int
+		name   string
+	}{
+		{738226 * time.Second, 2, "first quarter"},
+		{1275875 * time.Second, 4, "full moon"},
+		{1913524 * time.Second, 6, "last quarter"},
 	}
-	if sel.Name != "kaomoji" {
-		t.Fatalf("selected %q, want kaomoji", sel.Name)
-	}
-}
-
-func TestSelectMultipleThemesFails(t *testing.T) {
-	resetRegistry()
-	Register(DefaultTheme, fixedGen{"default"})
-	Register("moon", fixedGen{"moon"})
-	Register("mixed", fixedGen{"mixed"})
-	_, err := Select()
-	if err == nil {
-		t.Fatal("expected an error")
-	}
-	if !strings.Contains(err.Error(), "mixed, moon") {
-		t.Fatalf("error %q does not name both themes", err)
+	for _, tc := range cases {
+		got := MoonPhaseAt(testReferenceNewMoon.Add(tc.offset))
+		if got.Index != tc.index || got.Name != tc.name {
+			t.Errorf("offset %v: got %+v, want index %d %q", tc.offset, got, tc.index, tc.name)
+		}
 	}
 }
 
-func TestSelectEmptyFails(t *testing.T) {
-	resetRegistry()
-	if _, err := Select(); err == nil {
-		t.Fatal("expected an error")
+func TestMoonPhaseAtSlotIsDeterministic(t *testing.T) {
+	a := MoonPhaseAtSlot(20000)
+	b := MoonPhaseAtSlot(20000)
+	if a != b {
+		t.Fatalf("same slot returned %+v and %+v", a, b)
+	}
+}
+
+func TestKaomojiList(t *testing.T) {
+	if len(kaomojiList) < 100 {
+		t.Fatalf("embedded list has only %d kaomoji", len(kaomojiList))
+	}
+	seen := map[string]bool{}
+	for _, k := range kaomojiList {
+		if strings.TrimSpace(k) == "" {
+			t.Fatal("embedded list contains an empty kaomoji")
+		}
+		if seen[k] {
+			t.Fatalf("embedded list contains duplicate %q", k)
+		}
+		seen[k] = true
+	}
+}
+
+func TestGenerateIsDeterministic(t *testing.T) {
+	if Generate(42) != Generate(42) {
+		t.Fatal("same slot produced different bios")
+	}
+}
+
+func TestGenerateVaries(t *testing.T) {
+	seen := map[string]bool{}
+	for slot := int64(0); slot < 100; slot++ {
+		seen[Generate(slot)] = true
+	}
+	if len(seen) < 2 {
+		t.Fatal("100 slots produced fewer than two distinct bios")
+	}
+}
+
+func TestGenerateMatchesTheme(t *testing.T) {
+	const slot = int64(42)
+	switch theme {
+	case ThemeKaomoji:
+		if got, want := Generate(slot), kaomojiBio(slot); got != want {
+			t.Fatalf("Generate = %q, want kaomoji %q", got, want)
+		}
+	case ThemeMoon:
+		if got, want := Generate(slot), moonBio(slot); got != want {
+			t.Fatalf("Generate = %q, want moon %q", got, want)
+		}
+	case ThemeDefault:
+		if got, want := Generate(slot), defaultBio(); got != want {
+			t.Fatalf("Generate = %q, want default %q", got, want)
+		}
+	default:
+		t.Fatalf("unknown theme %q", theme)
+	}
+}
+
+func TestMoonBioUsesPhase(t *testing.T) {
+	const slot = int64(42)
+	out := moonBio(slot)
+	phase := MoonPhaseAtSlot(slot)
+	if !strings.Contains(out, phase.Emoji) || !strings.Contains(out, phase.Name) {
+		t.Fatalf("bio %q does not contain phase %+v", out, phase)
 	}
 }
