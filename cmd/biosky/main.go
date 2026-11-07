@@ -18,13 +18,7 @@ var version = "dev"
 
 func main() {
 	dryRun := flag.Bool("dry-run", false, "print the generated bio and exit")
-	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
-
-	if *showVersion {
-		fmt.Println(version)
-		return
-	}
 
 	if *dryRun {
 		slot := bio.Slot(time.Now())

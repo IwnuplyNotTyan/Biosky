@@ -53,8 +53,8 @@ Preview the result without touching the network:
 ## Choosing the bio
 
 - No tag: `default` — a fixed phrase.
-- `bio_kaomoji`: a random entry from `kaomoji.json` on each run.
-- `bio_moon`: the moon phase and a matching line per UTC day.
+- `kaomoji`: a random entry from `kaomoji.json` on each run.
+- `moon`: the moon phase and a matching line per UTC day.
 
 Only one `bio_*` tag may be used. Compiling two template files makes the
 duplicate `Generate` definition fail the build.
