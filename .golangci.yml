@@ -25,7 +25,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/iwnuplynottyan/hera
+        - biosky
   exclusions:
     generated: lax
     paths:

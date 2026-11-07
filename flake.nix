@@ -1,5 +1,5 @@
 {
-  description = "🕹️ Cartridge ~ All emulators just here";
+  description = "Biosky ~ Bluesky bio rotator";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
@@ -19,24 +19,25 @@
         then nixpkgs-darwinx86.legacyPackages.${system}
         else nixpkgs.legacyPackages.${system};
       version = "0.1.0";
-      hmModule = import ./nix/home-manager.nix { inherit self; };
-      mkCartridge = pkgs: pkgs.buildGo127Module {
-        pname = "cartridge";
+      mkBiosky = pkgs: pkgs.buildGo127Module {
+        pname = "biosky";
         inherit version;
         src = self;
 
-        # Fill after `go.mod` changes:
-        #   nix build 2>&1 | grep 'got:'
-        vendorHash = "sha256-tBZqU9qtWwxDghWFMVg7a1KWtWcBmhzFGsyNN98FjBo=";
+        vendorHash = null;
 
         ldflags = [
           "-s"
           "-w"
+          "-X"
+          "main.version=${version}"
         ];
 
+        trimpath = true;
+
         meta = {
-          description = "Retro games manager ✨";
-          mainProgram = "cartridge";
+          description = "Bluesky bio rotator";
+          mainProgram = "biosky";
         };
       };
     in
@@ -46,9 +47,8 @@
           pkgs = pkgsFor system;
         in
         {
-          default = mkCartridge pkgs;
+          default = mkBiosky pkgs;
         });
-      homeModules.default = hmModule;
       devShells = forAllSystems (system:
         let
           pkgs = pkgsFor system;
