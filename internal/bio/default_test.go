@@ -1,4 +1,4 @@
-//go:build !bio_kaomoji && !bio_moon
+//go:build !kaomoji && !moon
 
 package bio
 

@@ -53,7 +53,7 @@ Preview the result without touching the network:
 ## Choosing the bio
 
 - No tag: `default` — a fixed phrase.
-- `bio_kaomoji`: one entry from `kaomoji.json` per UTC day.
+- `bio_kaomoji`: a random entry from `kaomoji.json` on each run.
 - `bio_moon`: the moon phase and a matching line per UTC day.
 
 Only one `bio_*` tag may be used. Compiling two template files makes the

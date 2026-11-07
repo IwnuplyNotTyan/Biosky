@@ -1,4 +1,4 @@
-//go:build bio_moon
+//go:build moon
 
 package bio
 

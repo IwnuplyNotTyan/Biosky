@@ -1,4 +1,4 @@
-//go:build bio_kaomoji
+//go:build kaomoji
 
 package bio
 
@@ -23,9 +23,15 @@ func TestKaomojiList(t *testing.T) {
 	}
 }
 
-func TestGenerateIsDeterministic(t *testing.T) {
-	if Generate(42) != Generate(42) {
-		t.Fatal("same slot produced different bios")
+func TestGenerateReturnsListedKaomoji(t *testing.T) {
+	seen := map[string]bool{}
+	for _, k := range kaomojiList {
+		seen[k] = true
+	}
+	for slot := int64(0); slot < 100; slot++ {
+		if got := Generate(slot); !seen[got] {
+			t.Fatalf("Generate returned unlisted kaomoji %q", got)
+		}
 	}
 }
 

@@ -1,10 +1,11 @@
-//go:build bio_kaomoji
+//go:build kaomoji
 
 package bio
 
 import (
 	_ "embed"
 	"encoding/json"
+	"math/rand/v2"
 )
 
 const theme = ThemeKaomoji
@@ -29,7 +30,7 @@ func loadKaomoji() []string {
 	return list
 }
 
-// Generate returns one kaomoji for the UTC day slot.
-func Generate(slot int64) string {
-	return kaomojiList[Rand(slot, 0x6b616f6d6f6a69).IntN(len(kaomojiList))]
+// Generate returns a random kaomoji.
+func Generate(int64) string {
+	return kaomojiList[rand.IntN(len(kaomojiList))]
 }
