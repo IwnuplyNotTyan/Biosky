@@ -1,14 +1,18 @@
-# Biosky
+<div align="center">
+  <h1>🦋 ~ Biosky</h1>
+  <p>Bluesky bio rotator</p>
+</div>
 
-A tiny Go program that replaces the description (bio) of a Bluesky profile with
-a generated one-liner. It runs as a one-shot command, suitable for cron or a
-systemd timer.
+<p align="center">
+  <a href="https://github.com/IwnuplyNotTyan/biosky/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/IwnuplyNotTyan/biosky/ci.yml" alt="Build Status"/>
+  </a>
+  <img src="https://img.shields.io/github/license/IwnuplyNotTyan/biosky" alt="License"/>
+  <img src="https://img.shields.io/github/stars/IwnuplyNotTyan/biosky" alt="Stars"/>
+  <img src="https://img.shields.io/github/last-commit/IwnuplyNotTyan/biosky" alt="Last Commit"/>
+</p>
 
-The bio changes at UTC midnight and stays stable for the rest of the day. The
-same UTC day always produces the same bio, so running the command hourly is
-safe: if the description already matches, no write happens.
-
-## How it works
+## 💼  How it works
 
 - `internal/bluesky` is the AT Protocol client. It logs in with an app password,
   reads the existing `app.bsky.actor.profile` record, replaces only
@@ -23,45 +27,37 @@ safe: if the description already matches, no write happens.
 
 The binary uses only the Go standard library.
 
-## Requirements
+
+## ⛏️ Build
 
 - Go 1.27, or the Nix flake dev shell.
+
+> [!WARNING]
+> Use Go 1.25 if building for legacy openwrt
+
 - A Bluesky account and an **app password** from Settings → App Passwords.
 
-## Build
-
 ```bash
-direnv allow            # or: nix develop
 go build -trimpath -ldflags "-s -w" -o biosky ./cmd/biosky
 ```
 
-The default build has no tag and uses the `default` template. Pick a template
-with exactly one build tag:
+*The default build has no tag and uses the `default` template. Pick a template
+with exactly one build tag:*
 
 ```bash
-go build -tags bio_kaomoji -o biosky ./cmd/biosky
-go build -tags bio_moon    -o biosky ./cmd/biosky
+go build -tags kaomoji -o biosky ./cmd/biosky
+go build -tags moon    -o biosky ./cmd/biosky
 ```
 
-Preview the result without touching the network:
+Don't like these templates? Write by yourself!
+
+**Preview the result without touching the network:**
 
 ```bash
 ./biosky -dry-run
-./biosky -version
 ```
 
-## Choosing the bio
-
-- No tag: `default` — a fixed phrase.
-- `kaomoji`: a random entry from `kaomoji.json` on each run.
-- `moon`: the moon phase and a matching line per UTC day.
-
-Only one `bio_*` tag may be used. Compiling two template files makes the
-duplicate `Generate` definition fail the build.
-
-## Configuration
-
-Only authentication is configurable, through environment variables:
+## 🏵️ Configuration
 
 | Variable | Required | Meaning |
 |---|---|---|
@@ -69,20 +65,14 @@ Only authentication is configurable, through environment variables:
 | `BIOSKY_APP_PASSWORD` | yes | App password from Bluesky settings |
 | `BIOSKY_PDS` | no | PDS base URL, default `https://bsky.social` |
 
-Store the credentials in a private environment file:
+Store the credentials in a `~/.config/biosky/env`:
 
 ```bash
-mkdir -p ~/.config/biosky
-cat > ~/.config/biosky/env <<'EOF'
 BIOSKY_HANDLE=user.bsky.social
 BIOSKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
-EOF
-chmod 600 ~/.config/biosky/env
 ```
 
-The account password is never read; only an app password is used.
-
-## Scheduling
+## ⌛ Scheduling
 
 ### systemd user timer
 
@@ -106,34 +96,19 @@ runs exit without writing.
 Prefer the environment file with a wrapper script over putting secrets directly
 in a crontab.
 
-## Changing the bio
-
-Each template owns one file in `internal/bio`:
-
-- `default.go` (`//go:build !bio_kaomoji && !bio_moon`)
-- `kaomoji.go` (`//go:build bio_kaomoji`)
-- `moon.go` (`//go:build bio_moon`)
-
-Edit the file for the template you build. Every template file defines its own
-`theme` constant and `Generate` function, so all of its code stays in one
-place. A template receives the UTC day slot and may use `Rand(slot, salt)`.
-
-To refresh the kaomoji list, replace `internal/bio/kaomoji.json` with a JSON
-array of strings. Keep generated bios non-empty and at most 256 characters; the
-app rejects anything else before it contacts Bluesky.
-
-## Tests
+## 🧪 Tests
 
 ```bash
 go test ./...
-go test -tags bio_kaomoji ./...
-go test -tags bio_moon ./...
+go test -tags kaomoji ./...
+go test -tags moon ./...
 go vet ./...
 ```
 
-## Nix
 
-```bash
-nix build .#default
-./result/bin/biosky -version
-```
+## 📄 License
+[MIT](https://github.com/IwnuplyNotTyan/biosky/blob/main/LICENSE).
+
+<div align="center">
+  <h1>Made with ❤️ </h1>
+</div>
