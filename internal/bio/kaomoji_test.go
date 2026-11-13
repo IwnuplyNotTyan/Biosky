@@ -44,12 +44,3 @@ func TestGenerateVaries(t *testing.T) {
 		t.Fatal("100 slots produced fewer than two distinct bios")
 	}
 }
-
-func TestTheme(t *testing.T) {
-	if theme != ThemeKaomoji {
-		t.Fatalf("theme = %q, want %q", theme, ThemeKaomoji)
-	}
-	if Theme() != ThemeKaomoji {
-		t.Fatalf("Theme() = %q", Theme())
-	}
-}

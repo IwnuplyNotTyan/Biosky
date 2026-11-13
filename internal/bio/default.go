@@ -2,8 +2,6 @@
 
 package bio
 
-const theme = ThemeDefault
-
 const defaultText = "quietly existing, one day at a time"
 
 // Generate returns the fixed default bio.
